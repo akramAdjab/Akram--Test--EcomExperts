@@ -1,0 +1,29 @@
+/* --- Styling product color variant --- */
+.color-option--input {
+  display: none;
+}
+
+.color-option--label {
+  width: 4rem !important;
+  aspect-ratio: 1;
+  border: 2px solid transparent !important;
+  border-radius: 50% !important;
+  transition: all 0.2s;
+
+  display: inline-block;
+}
+
+.color-option--label:not(:last-child) {
+  margin-right: 1rem;
+}
+
+.color-option--input:checked + label {
+  border-color: #000 !important;
+}
+
+/* --- Styling product size variant --- */
+.size-variant {
+  padding: 1.6rem;
+  border: 1px solid gray;
+  background-color: transparent;
+}

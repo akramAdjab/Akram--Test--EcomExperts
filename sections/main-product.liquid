@@ -1,3 +1,6 @@
+{{ 'product-variant.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'productVariants.js' | asset_url }}" defer="defer"></script>
+
 <section
   id="MainProduct-{{ section.id }}"
   class="section-{{ section.id }}-padding gradient color-{{ section.settings.color_scheme }}"
@@ -407,8 +410,174 @@
                 share_link: share_url
               %}
 
-            {%- when 'variant_picker' -%}
-              {% render 'product-variant-picker', product: product, block: block, product_form_id: product_form_id %}
+            {% comment %} {%- when 'variant_picker' -%}
+              {% render 'product-variant-picker', product: product, block: block, product_form_id: product_form_id %} {% endcomment %}
+
+              {% comment %} Make Color variant as swatches and Size variant as Dropdawn {% endcomment %}
+              {%- when 'variant_picker' -%}
+                {%- unless product.has_only_default_variant -%}
+                    <variant-radios class="no-js-hidden" data-section="{{ section.id }}" data-url="{{ product.url }}" {{ block.shopify_attributes }}>
+                      {%- for option in product.options_with_values -%}
+                          <fieldset class="js product-form__input color-variant {% unless forloop.first %}hidden{% endunless %}">
+                            <legend class="form__label">{{ option.name }}</legend>
+                            {%- for value in option.values -%}
+                              <input type="radio" id="{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}"
+                                    name="{{ option.name }}"
+                                    value="{{ value | escape }}"
+                                    form="{{ product_form_id }}"
+                                    class="color-option--input"
+                                    {% if option.selected_value == value %}checked{% endif %}
+                              >
+                              <label for="{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}" class="color-option--label" style="background-color: {{ value }};">
+                                &nbsp;
+                              </label>
+                            {%- endfor -%}
+                          </fieldset>
+                      {%- endfor -%}
+                      <script type="application/json">
+                        {{ product.variants | json }}
+                      </script>
+                    </variant-radios>
+                    <variant-selects class="no-js-hidden" data-section="{{ section.id }}" data-url="{{ product.url }}" {{ block.shopify_attributes }}>
+                      {%- for option in product.options_with_values -%}
+                        <div class="product-form__input product-form__input--dropdown {% if forloop.first %}hidden{% endif %}">
+                          <label class="form__label" for="Option-{{ section.id }}-{{ forloop.index0 }}">
+                            {{ option.name }}
+                          </label>
+                          <div class="select">
+                            <select id="Option-{{ section.id }}-{{ forloop.index0 }}"
+                              class="select__select"
+                              name="options[{{ option.name | escape }}]"
+                              form="{{ product_form_id }}"
+                            >
+                              {%- for value in option.values -%}
+                                <option value="{{ value | escape }}" {% if option.selected_value == value %}selected="selected"{% endif %}>
+                                  {{ value }}
+                                </option>
+                              {%- endfor -%}
+                            </select>
+                            {% render 'icon-caret' %}
+                          </div>
+                        </div>
+                      {%- endfor -%}
+    
+                      <script type="application/json">
+                        {{ product.variants | json }}
+                      </script>
+                    </variant-selects>
+                {%- endunless -%}
+    
+                <noscript class="product-form__noscript-wrapper-{{ section.id }}">
+                  <div class="product-form__input{% if product.has_only_default_variant %} hidden{% endif %}">
+                    <label class="form__label" for="Variants-{{ section.id }}">{{ 'products.product.product_variants' | t }}</label>
+                    <div class="select">
+                      <select name="id" id="Variants-{{ section.id }}" class="select__select" form="{{ product_form_id }}">
+                        {%- for variant in product.variants -%}
+                          <option
+                            {% if variant == product.selected_or_first_available_variant %}selected="selected"{% endif %}
+                            {% if variant.available == false %}disabled{% endif %}
+                            value="{{ variant.id }}"
+                          >
+                            {{ variant.title }}
+                            {%- if variant.available == false %} - {{ 'products.product.sold_out' | t }}{% endif %}
+                            - {{ variant.price | money | strip_html }}
+                          </option>
+                        {%- endfor -%}
+                      </select>
+                      {% render 'icon-caret' %}
+                    </div>
+                  </div>
+                </noscript>
+
+
+              {% comment %} {%- when 'variant_picker' -%}
+                {%- unless product.has_only_default_variant -%}
+                  {% for option in product.options_with_values %}
+                    {% if option.name == 'Color' %}
+                      <div class="color-variant-container">
+                        <p class="form__label">{{ option.name }}</p>
+
+                        <div class="color-options">
+                          {% for value in option.values %}
+                            <input 
+                              type="radio" 
+                              id="{{ value }}"
+                              class="color-option--input"
+                              name="{{ option.name }}" 
+                              form="{{ product_form_id }}" 
+                              value="{{ value |  escape }}"
+                              {% if option_disabled %}
+                                class="disabled"
+                              {% endif %}
+                            />
+                            <label 
+                              for="{{ value }}"
+                              class="color-option--label"
+                              style="background-color: {{ value }};"
+                            >&nbsp;</label>
+                          {% endfor %}
+                        </div>
+
+                      </div>
+                    {% else option.name == 'Size' %}
+                      <div class="size-variant-container">
+                        <p class="form__label">{{ option.name }}</p>
+
+                        <select 
+                          name="options[{{ option.name | espace }}]" 
+                          id="variant-{{ section.id }}"
+                          form="{{ product_form_id }}"
+                          class="size-variant"
+                        >
+                          {% for value in option.values %}
+                            <option 
+                              value="{{ value }}"
+                            >
+                              {{ value }}
+                            </option>
+                          {% endfor %}
+                        </select>
+                        {% for value in option.values %}
+
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                {%- endunless -%}
+  
+                <noscript class="product-form__noscript-wrapper-{{ section.id }}">
+                  <div class="product-form__input{% if product.has_only_default_variant %} hidden{% endif %}">
+                    <label class="form__label" for="Variants-{{ section.id }}">
+                      {{- 'products.product.product_variants' | t -}}
+                    </label>
+                    <div class="select">
+                      <select
+                        name="id"
+                        id="Variants-{{ section.id }}"
+                        class="select__select"
+                        form="{{ product_form_id }}"
+                      >
+                        {%- for variant in product.variants -%}
+                          <option
+                            {% if variant == product.selected_or_first_available_variant %}
+                              selected="selected"
+                            {% endif %}
+                            {% if variant.available == false %}
+                              disabled
+                            {% endif %}
+                            value="{{ variant.id }}"
+                          >
+                            {{ variant.title }}
+                            {%- if variant.available == false %} - {{ 'products.product.sold_out' | t }}{% endif %}
+                            - {{ variant.price | money | strip_html }}
+                          </option>
+                        {%- endfor -%}
+                      </select>
+                      {% render 'icon-caret' %}
+                    </div>
+                  </div>
+                </noscript> {% endcomment %}
+              
 
             {%- when 'buy_buttons' -%}
               {%- render 'buy-buttons', block: block, product: product, product_form_id: product_form_id, section_id: section.id, show_pickup_availability: true -%}
@@ -614,7 +783,7 @@
         hiddenInput.value = event.currentTarget.value;
       });
     });
-  </script>
+  </script> 
 
   {%- liquid
     if product.selected_or_first_available_variant.featured_media
@@ -670,6 +839,94 @@
   </script>
   </div>
 </section>
+
+{% comment %} Script to back to default Size value "Unselect" whenever the page refreshed {% endcomment %}
+<script>
+  (function sizeDefaultValue () {
+    // PRODUCT JSON
+    const product = {{ product | json }};
+
+    // 1. Selecting DOM elements
+    const selectedColorOption = document.querySelector(`input[name='Color']:checked`);
+
+    const sizeVariantEl = document.querySelector(`select[name='options[Size]']`);
+    const sizeVariantOptions = [...sizeVariantEl.querySelectorAll('option')];
+    
+    const variantId = document.querySelector(`.product-variant-id`);
+
+    // 2. Disabling All values
+    sizeVariantOptions.forEach(option => {
+      option.removeAttribute('selected'); 
+    });
+    
+    // 3. Enable the default value "Unselected"
+    sizeVariantEl.value = 'Unselected';
+    sizeVariantOptions.at(0).setAttribute('selected', 'selected');
+
+    // 4. Getting the current variant id
+    const currentVariantId = product.variants.find(variant => variant.title.includes(sizeVariantOptions.at(0).value) && variant.title.includes(selectedColorOption.value));
+
+    // 5. Updating the URL
+    const url = window.location.href;
+    window.history.pushState('', document.title, `${url.slice(0, url.lastIndexOf('='))}=${currentVariantId.id}`);
+
+    // 6. Updating the variant id in order to add the correct options to the cart
+    variantId.value = currentVariantId.id;
+
+    product.variants.forEach(variant => console.log(`Variant ${variant.title}, with the id ${variant.id}`));
+  })()
+
+  // const colorOptions = [...document.querySelectorAll(`input[name='Color']`)];
+  // const sizeOption = document.querySelector(`select[name='options[Size]']`);
+  // console.log(sizeOption);
+
+  // colorOptions.forEach(el => el.addEventListener('change', function() {
+  //   console.log(colorOptions.find(color => color.checked));
+  //   console.log(sizeOption.value);
+  // }));
+  // sizeOption.addEventListener('change', function() {
+  //   console.log(colorOptions.find(color => color.checked));
+  //   console.log(sizeOption.value);
+  // });
+
+  const colorOptions = [...document.querySelectorAll(`input[name='Color']`)];
+  colorOptions.forEach(color => {
+    color.addEventListener('change', function() {
+      colorOptions.forEach(color => {
+        color.checked = false;
+      })
+
+      const selectedColor = color.value;
+      color.checked = true;
+      console.log(selectedColor);
+    })
+  })
+</script>
+
+{% comment %} Updating variant id {% endcomment %}
+{% comment %} <script>
+  // Product JSON
+  const product = {{ product | json }};
+
+  // DOM elements
+  const variantId = document.querySelector('.product-variant-id');
+  const colorOptionsLabels = [...document.querySelectorAll('.color-option--label')];
+  const colorOptionsInputs = [...document.querySelectorAll('.color-option--input')];
+  const sizeOptions = document.querySelector('.size-variant');
+
+  // Events
+  colorOptionsLabels.forEach(color => {
+    color.addEventListener('click', function () {
+      updateVariantId()
+    })
+  });
+
+  // Update variant id
+  const updateVariantId = function () {
+    const selectedColor = colorOptionsInputs.find(input => input.checked).value;
+    console.log(selectedColor);
+  }
+</script> {% endcomment %}
 
 {% schema %}
 {
