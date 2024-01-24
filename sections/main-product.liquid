@@ -1,5 +1,4 @@
 {{ 'product-variant.css' | asset_url | stylesheet_tag }}
-<script src="{{ 'productVariants.js' | asset_url }}" defer="defer"></script>
 
 <section
   id="MainProduct-{{ section.id }}"
@@ -414,6 +413,7 @@
               {% render 'product-variant-picker', product: product, block: block, product_form_id: product_form_id %}
 
               {% comment %} Make Color variant as swatches and Size variant as Dropdawn {% endcomment %}
+
               {% comment %} {%- when 'variant_picker' -%}
                 {%- unless product.has_only_default_variant -%}
                     <variant-radios class="no-js-hidden" data-section="{{ section.id }}" data-url="{{ product.url }}" {{ block.shopify_attributes }}>
@@ -842,6 +842,38 @@
 
 {% comment %} Script to back to default Size value "Unselect" whenever the page refreshed {% endcomment %}
 <script>
+  (function sizeDefaultValue () {
+    // PRODUCT JSON
+    const product = {{ product | json }};
+
+    // 1. Selecting DOM elements
+    const variantId = document.querySelector(`.product-variant-id`);
+    
+    const selectedColorOption = document.querySelector(`input[name='Color']:checked`);
+    const sizeVariantOptions = [...document.querySelectorAll(`input[name='Size']`)];    
+
+    // 2. Disabling All values
+    sizeVariantOptions.forEach(option => {
+      option.checked = false; 
+    });
+    
+    // 3. Enable the default value "Unselected"
+    sizeVariantOptions.at(0).checked = true;
+
+    // 4. Getting the current variant id
+    const currentVariantId = product.variants.find(variant => variant.title.includes(sizeVariantOptions.at(0).value) && variant.title.includes(selectedColorOption.value));
+
+    // 5. Updating the URL
+    const url = window.location.href;
+    window.history.pushState('', document.title, `${url.slice(0, url.lastIndexOf('='))}=${currentVariantId.id}`);
+
+    // 6. Updating the variant id in order to add the correct options to the cart
+    variantId.value = currentVariantId.id;
+  })()
+</script>
+
+
+<script>
   // (function sizeDefaultValue () {
   //   // PRODUCT JSON
   //   const product = {{ product | json }};
@@ -1070,13 +1102,9 @@
             {
               "value": "button",
               "label": "t:sections.main-product.blocks.variant_picker.settings.picker_type.options__2.label"
-            },
-            {
-              "value": "both",
-              "label": "t:sections.main-product.blocks.variant_picker.settings.picker_type.options__3.label"
             }
           ],
-          "default": "both",
+          "default": "dropdown",
           "label": "t:sections.main-product.blocks.variant_picker.settings.picker_type.label"
         }
       ]

@@ -56,9 +56,21 @@
       {% endif %}
       {% if option_disabled %}
       class="disabled"
+      {% endif %}
+      {% if option.name == 'Color' %}
+      class="color-option--input"
       {% endif %}>
-    <label for="{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}">
-      {{ value -}}
+    <label
+      for="{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}"
+      {% if option.name == 'Color' %}
+      class="color-option--label"
+      style="background-color: {{ value }};"
+      {% endif %}>
+      {% if option.name == 'Color' %}
+        &nbsp;
+      {% else %}
+        {{ value }}
+      {% endif %}
       <span class="visually-hidden">{{ 'products.product.variant_sold_out_or_unavailable' | t }}</span>
     </label>
   {%- elsif block.settings.picker_type == 'dropdown' -%}

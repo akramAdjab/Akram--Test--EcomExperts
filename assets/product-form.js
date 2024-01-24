@@ -27,21 +27,14 @@ if (!customElements.get("product-form")) {
       }
 
       // Add soft product to the cart func
-      #addSoftProductToTheCart(formData) {
-        // 1. Convert formData to an object
-        const dataObj = Object.fromEntries(formData);
-        const data = Object.entries(dataObj);
+      #addSoftProductToTheCart(options) {
+        // 1. Distracturing the color and size options
+        const [color, size] = options;
 
-        // 2. Check if the selected color and size options are "Black", "Medium"
-        const [colorValue, sizeValue] = data
-          .filter(([key]) => key === "Color" || key === "Size")
-          .map(([, value]) => value);
+        console.log(color, size);
 
-        console.log(colorValue, sizeValue);
-
-        if (colorValue === "Black" && sizeValue === "Medium") {
-          console.log("True");
-          // 3. Add Soft product to the cart
+        if (color === "Black" && size === "Medium") {
+          // 2. Add Soft product to the cart
           fetch(window.Shopify.routes.root + "cart/add.js", {
             method: "POST",
             headers: {
@@ -67,9 +60,6 @@ if (!customElements.get("product-form")) {
         delete config.headers["Content-Type"];
 
         const formData = new FormData(this.form);
-
-        // Check if selected option "Black" and "Medium", if true add soft product to the cart
-        this.#addSoftProductToTheCart(formData);
 
         if (this.cart) {
           formData.append(
@@ -127,6 +117,9 @@ if (!customElements.get("product-form")) {
               quickAddModal.hide(true);
             } else {
               this.cart.renderContents(response);
+
+              // Check if selected option "Black" and "Medium", if true add soft product to the cart
+              this.#addSoftProductToTheCart(response.variant_options);
             }
           })
           .catch((e) => {
