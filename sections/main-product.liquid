@@ -410,11 +410,11 @@
                 share_link: share_url
               %}
 
-            {% comment %} {%- when 'variant_picker' -%}
-              {% render 'product-variant-picker', product: product, block: block, product_form_id: product_form_id %} {% endcomment %}
+            {%- when 'variant_picker' -%}
+              {% render 'product-variant-picker', product: product, block: block, product_form_id: product_form_id %}
 
               {% comment %} Make Color variant as swatches and Size variant as Dropdawn {% endcomment %}
-              {%- when 'variant_picker' -%}
+              {% comment %} {%- when 'variant_picker' -%}
                 {%- unless product.has_only_default_variant -%}
                     <variant-radios class="no-js-hidden" data-section="{{ section.id }}" data-url="{{ product.url }}" {{ block.shopify_attributes }}>
                       {%- for option in product.options_with_values -%}
@@ -487,7 +487,7 @@
                       {% render 'icon-caret' %}
                     </div>
                   </div>
-                </noscript>
+                </noscript> {% endcomment %}
 
 
               {% comment %} {%- when 'variant_picker' -%}
@@ -842,39 +842,39 @@
 
 {% comment %} Script to back to default Size value "Unselect" whenever the page refreshed {% endcomment %}
 <script>
-  (function sizeDefaultValue () {
-    // PRODUCT JSON
-    const product = {{ product | json }};
+  // (function sizeDefaultValue () {
+  //   // PRODUCT JSON
+  //   const product = {{ product | json }};
 
-    // 1. Selecting DOM elements
-    const selectedColorOption = document.querySelector(`input[name='Color']:checked`);
+  //   // 1. Selecting DOM elements
+  //   const selectedColorOption = document.querySelector(`input[name='Color']:checked`);
 
-    const sizeVariantEl = document.querySelector(`select[name='options[Size]']`);
-    const sizeVariantOptions = [...sizeVariantEl.querySelectorAll('option')];
+  //   const sizeVariantEl = document.querySelector(`select[name='options[Size]']`);
+  //   const sizeVariantOptions = [...sizeVariantEl.querySelectorAll('option')];
     
-    const variantId = document.querySelector(`.product-variant-id`);
+  //   const variantId = document.querySelector(`.product-variant-id`);
 
-    // 2. Disabling All values
-    sizeVariantOptions.forEach(option => {
-      option.removeAttribute('selected'); 
-    });
+  //   // 2. Disabling All values
+  //   sizeVariantOptions.forEach(option => {
+  //     option.removeAttribute('selected'); 
+  //   });
     
-    // 3. Enable the default value "Unselected"
-    sizeVariantEl.value = 'Unselected';
-    sizeVariantOptions.at(0).setAttribute('selected', 'selected');
+  //   // 3. Enable the default value "Unselected"
+  //   sizeVariantEl.value = 'Unselected';
+  //   sizeVariantOptions.at(0).setAttribute('selected', 'selected');
 
-    // 4. Getting the current variant id
-    const currentVariantId = product.variants.find(variant => variant.title.includes(sizeVariantOptions.at(0).value) && variant.title.includes(selectedColorOption.value));
+  //   // 4. Getting the current variant id
+  //   const currentVariantId = product.variants.find(variant => variant.title.includes(sizeVariantOptions.at(0).value) && variant.title.includes(selectedColorOption.value));
 
-    // 5. Updating the URL
-    const url = window.location.href;
-    window.history.pushState('', document.title, `${url.slice(0, url.lastIndexOf('='))}=${currentVariantId.id}`);
+  //   // 5. Updating the URL
+  //   const url = window.location.href;
+  //   window.history.pushState('', document.title, `${url.slice(0, url.lastIndexOf('='))}=${currentVariantId.id}`);
 
-    // 6. Updating the variant id in order to add the correct options to the cart
-    variantId.value = currentVariantId.id;
+  //   // 6. Updating the variant id in order to add the correct options to the cart
+  //   variantId.value = currentVariantId.id;
 
-    product.variants.forEach(variant => console.log(`Variant ${variant.title}, with the id ${variant.id}`));
-  })()
+  //   product.variants.forEach(variant => console.log(`Variant ${variant.title}, with the id ${variant.id}`));
+  // })()
 
   // const colorOptions = [...document.querySelectorAll(`input[name='Color']`)];
   // const sizeOption = document.querySelector(`select[name='options[Size]']`);
@@ -889,18 +889,18 @@
   //   console.log(sizeOption.value);
   // });
 
-  const colorOptions = [...document.querySelectorAll(`input[name='Color']`)];
-  colorOptions.forEach(color => {
-    color.addEventListener('change', function() {
-      colorOptions.forEach(color => {
-        color.checked = false;
-      })
+  // const colorOptions = [...document.querySelectorAll(`input[name='Color']`)];
+  // colorOptions.forEach(color => {
+  //   color.addEventListener('change', function() {
+  //     colorOptions.forEach(color => {
+  //       color.checked = false;
+  //     })
 
-      const selectedColor = color.value;
-      color.checked = true;
-      console.log(selectedColor);
-    })
-  })
+  //     const selectedColor = color.value;
+  //     color.checked = true;
+  //     console.log(selectedColor);
+  //   })
+  // })
 </script>
 
 {% comment %} Updating variant id {% endcomment %}
@@ -1070,9 +1070,13 @@
             {
               "value": "button",
               "label": "t:sections.main-product.blocks.variant_picker.settings.picker_type.options__2.label"
+            },
+            {
+              "value": "both",
+              "label": "t:sections.main-product.blocks.variant_picker.settings.picker_type.options__2.label"
             }
           ],
-          "default": "button",
+          "default": "both",
           "label": "t:sections.main-product.blocks.variant_picker.settings.picker_type.label"
         }
       ]
