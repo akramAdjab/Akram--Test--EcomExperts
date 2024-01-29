@@ -758,6 +758,7 @@
   // 2. Selecting DOM elements
   const variantsContainer = document.querySelector('.product__variants');
   const variantId = document.querySelector(`.product-variant-id`);
+  const priceEl = document.querySelector('.price-item--regular');
 
   // 3. Functions
   const disableSubmitBtn = function (disabled) {
@@ -786,6 +787,10 @@
     imageEl.setAttribute('alt', name);
   }
 
+  const updatePrice = function(price) {
+    return new Intl.NumberFormat('en', {style: 'currency', currency: 'USD'}).format(price / 100);
+  }
+
   // 4. Events handlers
   variantsContainer.addEventListener('change', function (e) {
     // Initial state -- Enable the submit button
@@ -808,6 +813,9 @@
 
     // D. Change Image based on the selected color
     updateImage(selectedVariant);
+
+    // D. Update the price
+    priceEl.textContent = `${updatePrice(selectedVariant.price)} CAD`;
   })
 </script>
 
