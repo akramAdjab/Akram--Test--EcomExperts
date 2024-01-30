@@ -1,3 +1,5 @@
+{{ 'product-variant.css' | asset_url | stylesheet_tag }}
+
 <section
   id="MainProduct-{{ section.id }}"
   class="section-{{ section.id }}-padding gradient color-{{ section.settings.color_scheme }}"
@@ -407,8 +409,86 @@
                 share_link: share_url
               %}
 
+            {% comment %} {%- when 'variant_picker' -%}
+              {% render 'product-variant-picker', product: product, block: block, product_form_id: product_form_id %} {% endcomment %}
+
+            {% comment %} Variant picker: START {% endcomment %}
             {%- when 'variant_picker' -%}
-              {% render 'product-variant-picker', product: product, block: block, product_form_id: product_form_id %}
+              {%- unless product.has_only_default_variant -%}
+                <div class="product__variants">
+                  {% for option in product.options_with_values %}
+                    {% if option.name == 'Color' %}
+                      <div class="product__variant--color">
+                        <p class="form__label">{{ option.name }}</p>
+
+                        <div class="product__variant--color-options">
+                          {% for value in option.values %}
+                            <div class="product__variant--color-option">
+                              <input
+                                type="radio"
+                                id="{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}"
+                                name="{{ option.name }}"
+                                value="{{ value | escape }}"
+                                form="{{ product_form_id }}"
+                                {% if option.selected_value == value %}
+                                checked
+                                {% endif %}
+                                {% if option_disabled %}
+                                class="disabled"
+                                {% endif %}
+                                {% if option.name == 'Color' %}
+                                class="color-option--input"
+                                {% endif %}>
+                              <label
+                                for="{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}"
+                                {% if option.name == 'Color' %}
+                                class="color-option--label"
+                                style="background-color: {{ value }};"
+                                {% endif %}>
+                                {% if option.name == 'Color' %}
+                                  &nbsp;
+                                {% else %}
+                                  {{ value }}
+                                {% endif %}
+                                <span class="visually-hidden">{{ 'products.product.variant_sold_out_or_unavailable' | t }}</span>
+                              </label>
+                              <p class="color-name">{{ value }}</p>
+                            </div>
+                          {% endfor %}
+                        </div>
+                      </div>
+                    {% elsif option.name == 'Size' %}
+                      <div class="product__variant--size">
+                        <p class="form__label">{{ option.name }}</p>
+
+                        <div class="select">
+                          <select
+                            id="Option-{{ section.id }}-{{ forloop.index0 }}"
+                            class="select__select"
+                            name="options[{{ option.name | escape }}]"
+                            form="{{ product_form_id }}">
+                            {% for value in option.values %}
+                              <option
+                                value="{{ value | escape }}"
+                                {% if option.selected_value == value %}
+                                selected="selected"
+                                {% endif %}>
+                                {% if option_disabled -%}
+                                  {{- 'products.product.value_unavailable' | t: option_value: value -}}
+                                {%- else -%}
+                                  {{- value -}}
+                                {%- endif %}
+                              </option>
+                            {% endfor %}
+                          </select>
+                          {% render 'icon-caret' %}
+                        </div>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              {%- endunless -%}
+            {% comment %} Variant picker: END {% endcomment %}
 
             {%- when 'buy_buttons' -%}
               {%- render 'buy-buttons', block: block, product: product, product_form_id: product_form_id, section_id: section.id, show_pickup_availability: true -%}
@@ -614,7 +694,7 @@
         hiddenInput.value = event.currentTarget.value;
       });
     });
-  </script>
+  </script> 
 
   {%- liquid
     if product.selected_or_first_available_variant.featured_media
@@ -670,6 +750,114 @@
   </script>
   </div>
 </section>
+
+<script>
+  // 1. Product JSON
+  const product = {{ product | json }};
+
+  // 2. Selecting DOM elements
+  const variantsContainer = document.querySelector('.product__variants');
+  const variantId = document.querySelector(`.product-variant-id`);
+  const priceEl = document.querySelector('.price-item--regular');
+
+  // 3. Functions
+  const disableSubmitBtn = function (disabled) {
+    const submitButton = document.querySelector('.product-form__submit');
+    const submitButtonText = document.querySelector('.product-form__submit').querySelector('span');
+
+    disabled ? submitButton.setAttribute('disabled', disabled) : submitButton.removeAttribute('disabled');
+    submitButtonText.textContent = disabled ? 'Unavailable' : 'Add to cart';
+  }
+
+  const updateURL = function (id) {
+    const url = window.location.href;
+    const newURL = url.includes('variant') ? 
+      `${url.slice(0, url.lastIndexOf('='))}=${id}` : 
+      `${url}?variant=${id}` ;
+
+    window.history.pushState('', document.title, newURL);
+  }
+
+  const updateImage = function(variant) {
+    const {name, featured_image: { src }} = variant;
+    const imageEl = document.querySelector('.product__media')?.querySelector('img');
+
+    // Change image
+    imageEl.srcset = src;
+    imageEl.setAttribute('alt', name);
+  }
+
+  const updatePrice = function(price) {
+    return new Intl.NumberFormat('en', {style: 'currency', currency: 'USD'}).format(price / 100);
+  }
+
+  // 4. Events handlers
+  variantsContainer.addEventListener('change', function (e) {
+    // Initial state -- Enable the submit button
+    disableSubmitBtn(false);
+
+    // A. Getting the selected values
+    const colorOptionValue = [...document.querySelectorAll(`input[name='Color']`)].find(option => option.checked)?.value;
+    const sizeOptionValue = document.querySelector(`select[name='options[Size]']`)?.value;
+
+    const selectedVariant = product.variants.find(variant => variant.title.includes(colorOptionValue) && variant.title.includes(sizeOptionValue));
+
+    // B. If the selected size in Unselected OR variant is unavailable -- Disable the add to cart button
+    if (sizeOptionValue === 'Unselected' || !selectedVariant.available) {
+      disableSubmitBtn(true);
+    }
+      
+    // C. Update variant id 
+    updateURL(selectedVariant.id); // URL
+    variantId.value = selectedVariant.id; // Input variant ID
+
+    // D. Change Image based on the selected color
+    updateImage(selectedVariant);
+
+    // D. Update the price
+    priceEl.textContent = `${updatePrice(selectedVariant.price)} CAD`;
+  })
+</script>
+
+{% comment %} Script to back to default Size value "Unselect" whenever the page refreshed {% endcomment %}
+<script>
+  (function sizeDefaultValue () {
+    // PRODUCT JSON
+    const product = {{ product | json }};
+
+    // 1. Selecting DOM elements
+    const variantId = document.querySelector(`.product-variant-id`);
+    const submitButton = document.querySelector('.product-form__submit');
+    const submitButtonText = document.querySelector('.product-form__submit').querySelector('span');
+    
+    const selectedColorOption = document.querySelector(`input[name='Color']:checked`);
+    const sizeVariant = document.querySelector(`select[name='options[Size]']`);    
+    const sizeVariantOptions = [...sizeVariant.querySelectorAll('option')];    
+
+    // 2. Disabling All values
+    sizeVariantOptions.forEach(option => {
+      option.removeAttribute('selected');
+    });
+    
+    // 3. Enable the default value "Unselected"
+    sizeVariantOptions.at(0).setAttribute('selected', 'selected');
+
+    // 4. Getting the current variant id
+    const currentVariantId = product.variants.find(variant => variant.title.includes(sizeVariantOptions.at(0).value) && variant.title.includes(selectedColorOption.value));
+
+    // 5. Updating the URL
+    const url = window.location.href;
+    const newURL = url.includes('variant') ? `${url.slice(0, url.lastIndexOf('='))}=${currentVariantId.id}` : `${url}?variant=${currentVariantId.id}`;
+    window.history.pushState('', document.title, newURL);
+
+    // 6. Updating the variant id in order to add the correct options to the cart
+    variantId.value = currentVariantId.id;
+
+    // 7. Disable the add to cart button
+    submitButton.setAttribute('disabled', true)
+    submitButtonText.textContent = 'Unavailable';
+  })()
+</script>
 
 {% schema %}
 {
@@ -815,7 +1003,7 @@
               "label": "t:sections.main-product.blocks.variant_picker.settings.picker_type.options__2.label"
             }
           ],
-          "default": "button",
+          "default": "dropdown",
           "label": "t:sections.main-product.blocks.variant_picker.settings.picker_type.label"
         }
       ]
